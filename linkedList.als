@@ -8,10 +8,12 @@ one sig List {
 
 sig Node {
     var nextNode: lone Node,
-    val: one Value
+    val: one Value,
+    index: one Index
 }
 
 sig Value {}
+sig Index {}
 
 ------------------------- State change predicates -----------------------------
 
@@ -67,6 +69,32 @@ pred deleteAtTail[v: one Value] {
 	}
 }
 
+pred delete[v: one Value, i: one Index] {
+	some List.head
+	some List.tail
+	some n: Node | { // i is the index of the node we want to delete (n)
+		some m: Node | { // m is the node before the node we want to delete
+			n.index = i
+			m.nextNode = n
+			nextNode' = nextNode + (m -> n.nextNode) - (m -> n) - (n -> n.nextNode)
+		}
+	}
+}
+
+pred insert[v: one Value, i: one Index] {
+	some n: Node | { // this is the node we are inserting
+		some m: Node | { // this is the node before the one we are inserting
+			m.nextNode.index = i
+			n.index' = i
+			m.index' = m.index
+			m.nextNode'.index' = i + 1
+			nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
+			
+		}
+
+	}
+}
+
 ------------------------------ Valid traces fact ------------------------------
 
 /* 
@@ -76,7 +104,7 @@ pred deleteAtTail[v: one Value] {
 */
 fact validTraces {
 	init
-    	always (some v: Value | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v])
+    	always (some v: Value | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or some i: Index | delete[v, i] or insert[v, i])
 }
 
 ------------------ Predicates to check expected outcomes ----------------------
@@ -87,9 +115,7 @@ pred deleteThenInsertAtHead {
 		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
 	}
 }
-
 --run { deleteAndInsertAtHead } for 4
-
 
 pred deleteThenInsertAtTail {
 	all v: Value | (deleteAtTail[v] and after insertAtTail[v]) => {
@@ -105,15 +131,22 @@ pred deleteThenInsertAtTail {
 
 --run { deleteAndInsertAtTail } for 4
 
+
+pred deleteThenInsertSamePlace {
+	all v: Value, i: Index | (delete[v, i] and after insert[v, i]) => {
+		List.head.val = List.head''.val
+		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
+	}
+}
+
+run { deleteThenInsertSamePlace} for 4
+
+
 assert alwaysDeleteThenInsertAtHead { always deleteThenInsertAtHead }
 check alwaysDeleteThenInsertAtHead
 
 assert alwaysDeleteThenInsertAtTail { always deleteThenInsertAtTail }
 check alwaysDeleteThenInsertAtTail
 
-
-
-
-
-
-
+assert alwaysDeleteThenInsertSamePlace { always deleteThenInsertSamePlace }
+check alwaysDeleteThenInsertSamePlace
