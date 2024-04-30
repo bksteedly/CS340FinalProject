@@ -4,9 +4,10 @@ class Node:
     def __init__(self, data):
         self.data = data
         self.next = None
+        self.prev = None
 
  
-class LinkedList:
+class DoublyLinkedList:
     def __init__(self):
         self.head = None
 
@@ -16,6 +17,7 @@ class LinkedList:
             self.head = newNode
             return
         else: 
+            self.head.prev = newNode
             newNode.next = self.head 
             self.head = newNode
     
@@ -30,6 +32,7 @@ class LinkedList:
                 previousTail = previousTail.next
  
         previousTail.next = newNode
+        newNode.prev = previousTail
 
     def insertAtIndex(self, data, index):
         newNode = Node(data)
@@ -45,6 +48,9 @@ class LinkedList:
  
             if currentNode != None:
                 newNode.next = currentNode.next
+                newNode.prev = currentNode
+                if currentNode.next:
+                    currentNode.next.prev = newNode
                 currentNode.next = newNode
             else:
                 print("Invalid index entered: ", index)
@@ -52,8 +58,12 @@ class LinkedList:
     def deleteAtHead(self):
         if self.head is None:
             return
+        elif self.head.next is None:
+            self.head = None
+            return
         else:
             self.head = self.head.next
+            self.head.prev = None
     
     def deleteAtTail(self):
         if self.head is None:
@@ -83,6 +93,8 @@ class LinkedList:
                 currentIndex += 1
  
             if currentNode != None:
+                if currentNode.next.next:
+                    currentNode.next.next.prev = currentNode
                 currentNode.next = currentNode.next.next
             else:
                 print("Invalid index entered:", index)
@@ -94,29 +106,47 @@ class LinkedList:
             result.append(currentNode.data)
             currentNode = currentNode.next
         return result
+    
+    def reverseList(self):
+        result = []
+        currentNode = self.head
+        while currentNode != None and currentNode.next:
+            currentNode = currentNode.next
 
-# PBT 
+        startFromTail = currentNode
+        while startFromTail != None and startFromTail.prev:
+            result.append(startFromTail.data)
+            startFromTail = startFromTail.prev
+
+        if startFromTail:
+            result.append(startFromTail.data)
+
+        return result
+    
+# PBT
 @given(st.lists(st.integers()))
 def test_insertAtHead(values):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
     
     for value in values:
         linkedList.insertAtHead(value)
 
     assert linkedList.convertToList() == list(reversed(values))
+    assert linkedList.reverseList() == values
 
 @given(st.lists(st.integers()))
 def test_insertAtTail(values):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
 
     for value in values:
         linkedList.insertAtTail(value)
 
     assert linkedList.convertToList() == values
+    assert linkedList.reverseList() == list(reversed(values)) 
 
 @given(st.lists(st.integers()), st.integers(), st.integers(min_value=0))
 def test_insertAtIndex(values, data, index):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
     for value in values:
         linkedList.insertAtTail(value)
     
@@ -126,11 +156,12 @@ def test_insertAtIndex(values, data, index):
     firstHalf = linkedList.convertToList()[:index]
     secondHalf = linkedList.convertToList()[index+1:]
     
-    assert firstHalf + secondHalf == values
+    assert firstHalf + secondHalf == values 
+    assert linkedList.reverseList() == list(reversed(linkedList.convertToList())) 
 
 @given(st.lists(st.integers()), st.integers(min_value=1))
 def test_deleteAtHead(values, n):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
 
     for value in values:
         linkedList.insertAtTail(value)
@@ -139,10 +170,11 @@ def test_deleteAtHead(values, n):
     for _ in range(numOfDeletes): 
         linkedList.deleteAtHead()
     assert linkedList.convertToList() == values[numOfDeletes:]
+    assert linkedList.reverseList() == list(reversed(values[numOfDeletes:]))
 
 @given(st.lists(st.integers()), st.integers(min_value=1))
 def test_deleteAtTail(values, n):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
 
     for value in values:
         linkedList.insertAtTail(value)
@@ -152,10 +184,11 @@ def test_deleteAtTail(values, n):
         linkedList.deleteAtTail()
 
     assert linkedList.convertToList() == values[:len(values) - numOfDeletes]
+    assert linkedList.reverseList() == list(reversed(values[:len(values) - numOfDeletes]))
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_deleteAtIndex(values, index):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
     for value in values:
         linkedList.insertAtTail(value)
     
@@ -165,10 +198,11 @@ def test_deleteAtIndex(values, index):
     firstHalf = values[:index]
     secondHalf = values[index+1:]
     assert linkedList.convertToList() == firstHalf + secondHalf
+    assert linkedList.reverseList() == list(reversed(firstHalf + secondHalf))
 
 @given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
 def test_deleteThenInsert(values, data, index):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
 
     for value in values:
         linkedList.insertAtTail(value)
@@ -179,11 +213,12 @@ def test_deleteThenInsert(values, data, index):
     linkedList.insertAtIndex(data, index)
 
     assert len(linkedList.convertToList()) == len(values)  
-    assert linkedList.convertToList() == values[:index] + [data] + values[index+1:] 
+    assert linkedList.convertToList() == values[:index] + [data] + values[index+1:]
+    assert linkedList.reverseList() == list(reversed(values[:index] + [data] + values[index+1:]))
 
 @given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
 def test_insertThenDelete(values, data, index):
-    linkedList = LinkedList()
+    linkedList = DoublyLinkedList()
 
     for value in values:
         linkedList.insertAtTail(value)
@@ -194,6 +229,7 @@ def test_insertThenDelete(values, data, index):
     linkedList.deleteAtIndex(index)
 
     assert linkedList.convertToList() == values
+    assert linkedList.reverseList() == list(reversed(values))
 
 def main():
     test_insertAtHead()
