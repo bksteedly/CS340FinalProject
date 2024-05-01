@@ -19,6 +19,12 @@ sig Node {
     var index: disj Int
 }
 
+fact {
+	all n, m: Node | (n -> m in nextNode) => n.index < m.index
+ 	List.head.index = 0 
+	all n: Node | List.tail != n => n.index < List.tail.index
+}
+
 sig Value {}
 
 ------------------------- State change predicates -----------------------------
@@ -37,6 +43,8 @@ pred insertAtHead[v: one Value] {
 		n.val = v
 		List.head != n
 		nextNode' = nextNode + (n -> List.head)
+		n.index' = List.head.index
+		List.head.index' = 1
 		List.head' = n
 		List.tail' = List.tail
   	}
@@ -51,11 +59,15 @@ pred insertAtTail[v: one Value] {
 			m not in List.head.^nextNode  
 			m.val = v
 			nextNode' = nextNode + (n -> m)
+			m.index' = List.tail.index + 1
+			List.tail.index' = List.tail.index
 			List.tail' = m
 			List.head' = List.head
 		}
 	}
 }
+
+run insertAtTail
 
 pred deleteAtHead[v: one Value] {
 	some List.head
@@ -64,6 +76,7 @@ pred deleteAtHead[v: one Value] {
 		List.head = n
 		n.val = v
 		nextNode' = nextNode - (n -> n.nextNode)
+		n.nextNode.index' = List.head.index
 		List.head' = n.nextNode
 		List.tail' = List.tail
 	}
@@ -76,10 +89,27 @@ pred deleteAtTail[v: one Value] {
 		List.tail = m.nextNode
 		List.tail.val = v
 		nextNode' = nextNode - (m -> m.nextNode)
+		m.index' = List.tail.index
 		List.tail' = m
 		List.head' = List.head
 	}
 }
+
+pred insert[v: one Value, i: one Int] {
+	some n: Node | { // this is the node we are inserting
+		some m: Node | { // this is the node before the one we are inserting
+			n not in List.head.^nextNode
+			m.nextNode.index = i
+			n.index' = i
+			m.index' = m.index
+			m.nextNode'.index' = i + 1
+			nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
+			
+		}
+	}
+}
+
+run insert
 
 pred delete[i: one Int] {
 	some List.head
@@ -88,31 +118,18 @@ pred delete[i: one Int] {
 		some m: Node | { // m is the node before the node we want to delete
 			n.index = i
 			m.nextNode = n
+			n.nextNode.index' = n.index
+			m.index' = m.index
 			nextNode' = nextNode + (m -> n.nextNode) - (m -> n) - (n -> n.nextNode)
 		}
 	}
 }
 
-pred insert[v: one Value, i: one Int] {
-	some n: Node | { // this is the node we are inserting
-		some m: Node | { // this is the node before the one we are inserting
-			m.nextNode.index = i
-			n.index' = i
-			m.index' = m.index
-			m.nextNode'.index' = i + 1
-			nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
-			
-		}
+run delete
 
-	}
-}
+
 ------------------------------ Valid traces fact ------------------------------
 
-/* 
-  How should traces start? What options should happen on every step?
-  Note that unlike the trash model from class, you should *not* include a 
-  "doNothing" predicate in this model. 
-*/
 fact validTraces {
 	init
     	always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
@@ -120,17 +137,6 @@ fact validTraces {
 
 ------------------ Predicates to check expected outcomes ----------------------
 
-/*
-  Some things to check:
-  - No element can be the nextNode of multiple elements or have multiple 
-     nextNodes.
-  - If an element is not in the stack it should not have a nextNode or be 
-     another element's nextNode.
-  - An element cannot be its own nextNode.
-
-  Note: until the trash model from class, the outermost "always" is included in
-  the relevant "check" statement below, so you don't need to include it here.
-*/
 pred validList {
 	// No element can be the nextNode of multiple elements or have multiple nextNodes
 	no disj n1, n2: Node | n1.nextNode = n2.nextNode && some n1.nextNode
@@ -145,22 +151,6 @@ pred validList {
 }
 
 
-pred deleteThenInsertAtHead {
-	init
-	some v: Value | {
-		deleteAtHead[v]
-		after insertAtHead[v]
-	}
-}
-
-pred deleteThenInsertAtTail {
-	init
-	some v: Value | {
-		deleteAtTail[v]
-		after insertAtTail[v]
-	}
-}
-
 
 pred deleteThenInsertSamePlace {
 	init
@@ -170,20 +160,38 @@ pred deleteThenInsertSamePlace {
 	}
 }
 
+pred deleteThenInsertAtHead {
+	all v: Value | (deleteAtHead[v] and after insertAtHead[v]) => {
+		List.head.val = List.head''.val
+		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
+	}
+}
+
+
+
+pred deleteThenInsertAtTail {
+	all v: Value | (deleteAtTail[v] and after insertAtTail[v]) => {
+		some m: Node {
+			List.tail = m.nextNode
+			List.tail'' = m.nextNode
+		
+			List.tail''.val = List.tail.val
+			nextNode'' - (m -> List.tail'') = nextNode - (m -> List.tail) 
+		}
+	}
+}
+
+assert alwaysDeleteThenInsertAtHead { always deleteThenInsertAtHead }
+check alwaysDeleteThenInsertAtHead
+
+assert alwaysDeleteThenInsertAtTail { always deleteThenInsertAtTail }
+check alwaysDeleteThenInsertAtTail
+
+
 run { validList } for 10
-
---run insert for 4
---run delete for 4
---run { deleteThenInsertAtHead } for 4
---run { deleteAndInsertAtTail } for 4
---run { deleteThenInsertSamePlace} for 4
+run { deleteThenInsertAtHead } for 10
+run { deleteThenInsertAtTail } for 10
 
 
-//assert alwaysDeleteThenInsertAtHead { always deleteThenInsertAtHead }
-//check alwaysDeleteThenInsertAtHead
-//
-//assert alwaysDeleteThenInsertAtTail { always deleteThenInsertAtTail }
-//check alwaysDeleteThenInsertAtTail
-//
-//assert alwaysDeleteThenInsertSamePlace { always deleteThenInsertSamePlace }
-//check alwaysDeleteThenInsertSamePlace
+
+
