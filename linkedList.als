@@ -20,9 +20,9 @@ sig Node {
 }
 
 fact {
-	all n, m: Node | (n -> m in nextNode) => n.index < m.index
- 	List.head.index = 0 
-	all n: Node | List.tail != n => n.index < List.tail.index
+	all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
+ 	some List.head => List.head.index = 0
+//	all n: Node | List.tail != n => n.index < List.tail.index
 }
 
 sig Value {}
@@ -35,52 +35,75 @@ pred init {
 	no tail
 }
 
-run init
+//run init
 
 pred insertAtHead[v: one Value] {
 	some n: Node | {
 		n not in List.head.^nextNode  
 		n.val = v
-		List.head != n
 		nextNode' = nextNode + (n -> List.head)
-		n.index' = List.head.index
-		List.head.index' = 1
+		n.index' = 0
 		List.head' = n
-		List.tail' = List.tail
+		some List.head => {
+			List.tail' = List.tail
+		}
+		no List.head => {
+			List.tail' = n
+		}
   	}
 }
 
-run insertAtHead
+//run insertAtHead
 
 pred insertAtTail[v: one Value] {
-	some n: Node | {
-		List.tail = n
-		some m: Node | {
-			m not in List.head.^nextNode  
-			m.val = v
-			nextNode' = nextNode + (n -> m)
-			m.index' = List.tail.index + 1
-			List.tail.index' = List.tail.index
-			List.tail' = m
-			List.head' = List.head
+	some List.tail => {
+		some n: Node | {
+			List.tail = n
+			some m: Node | {
+				m not in List.head.^nextNode  
+				m.val = v
+				nextNode' = nextNode + (n -> m)
+				List.tail' = m
+				List.head' = List.head
+			}
+		}
+	}
+	no List.tail => {
+		some n: Node | {
+			n not in List.head.^nextNode
+			n.val = v
+			nextNode' = nextNode
+			n.index' = 0
+			List.head' = n
+			List.tail' = n
 		}
 	}
 }
 
-run insertAtTail
+//run insertAtTail
 
 pred deleteAtHead[v: one Value] {
 	some List.head
-	some List.tail
+//	some List.tail
 	some n: Node | {
 		List.head = n
 		n.val = v
-		nextNode' = nextNode - (n -> n.nextNode)
-		n.nextNode.index' = List.head.index
-		List.head' = n.nextNode
-		List.tail' = List.tail
+		//n.nextNode.index' = List.head.index
+		(List.head = List.tail) => {
+			List.tail = n
+			no nextNode
+			no List.tail'
+			no List.head'
+		}
+		(List.head != List.tail) => {
+			nextNode' = nextNode - (n -> n.nextNode)
+			List.tail' = List.tail
+			List.head' = n.nextNode
+		}
 	}
 }
+
+run deleteAtHead
 
 pred deleteAtTail[v: one Value] {
 	some List.head
@@ -132,8 +155,11 @@ run delete
 
 fact validTraces {
 	init
-    	always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
+    //	always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
+	some v: Value| insertAtHead[v] and after deleteAtHead[v]
 }
+
+//add a donothing
 
 ------------------ Predicates to check expected outcomes ----------------------
 
@@ -191,7 +217,3 @@ check alwaysDeleteThenInsertAtTail
 run { validList } for 10
 run { deleteThenInsertAtHead } for 10
 run { deleteThenInsertAtTail } for 10
-
-
-
-
