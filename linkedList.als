@@ -1,13 +1,10 @@
-//fact to constrain that the index must be smaller than tail
-// implement find
-//head is zero
-//for all pairs of nodes next to each other the left should be one more than the right
-// for constraints on delete and insert preconditon that the number that's passed in is less than the length of the list
-
+abstract sig Step {}
+one sig insertAtHead, insertAtTail, deleteAtHead, deleteAtTail, insert, delete extends Step {}
 
 one sig List {
     var head: lone Node,
-    var tail: lone Node
+    var tail: lone Node,
+    var whichStep: Step 
 } {
     no tail.nextNode
     no nextNode.head
@@ -22,7 +19,7 @@ sig Node {
 fact {
 	all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
  	some List.head => List.head.index = 0
-//	all n: Node | List.tail != n => n.index < List.tail.index
+	List.head != List.tail => List.tail in List.head.^nextNode
 }
 
 sig Value {}
@@ -35,7 +32,7 @@ pred init {
 	no tail
 }
 
-//run init
+run init
 
 pred insertAtHead[v: one Value] {
 	some n: Node | {
@@ -44,16 +41,19 @@ pred insertAtHead[v: one Value] {
 		nextNode' = nextNode + (n -> List.head)
 		n.index' = 0
 		List.head' = n
-		some List.head => {
+		List.head != List.tail => {
 			List.tail' = List.tail
+			List.tail'.index' = List.tail.index
 		}
-		no List.head => {
+
+		List.head = List.tail => {
 			List.tail' = n
 		}
   	}
+	List.whichStep = insertAtHead
 }
 
-//run insertAtHead
+run insertAtHead
 
 pred insertAtTail[v: one Value] {
 	some List.tail => {
@@ -68,6 +68,7 @@ pred insertAtTail[v: one Value] {
 			}
 		}
 	}
+
 	no List.tail => {
 		some n: Node | {
 			n not in List.head.^nextNode
@@ -78,74 +79,143 @@ pred insertAtTail[v: one Value] {
 			List.tail' = n
 		}
 	}
+
+	List.whichStep = insertAtTail
 }
 
-//run insertAtTail
+run insertAtTail
 
 pred deleteAtHead[v: one Value] {
-	some List.head
-//	some List.tail
-	some n: Node | {
-		List.head = n
-		n.val = v
-		//n.nextNode.index' = List.head.index
-		(List.head = List.tail) => {
-			List.tail = n
-			no nextNode
-			no List.tail'
-			no List.head'
-		}
-		(List.head != List.tail) => {
-			nextNode' = nextNode - (n -> n.nextNode)
-			List.tail' = List.tail
-			List.head' = n.nextNode
-		}
-	}
+    some List.head
+    some n: Node | {
+
+	  List.head = n
+        n.val = v
+
+        List.head = List.tail=> {
+		List.tail = n
+            no List.tail'
+		no List.head'
+            no nextNode'
+        }
+
+        List.head != List.tail => {
+		List.head' = n.nextNode
+            List.tail' = List.tail
+		List.tail'.index' = List.tail.index
+            nextNode' = nextNode - (n -> n.nextNode)
+        }
+    }
+	List.whichStep = deleteAtHead
 }
 
 run deleteAtHead
 
+
 pred deleteAtTail[v: one Value] {
-	some List.head
-	some List.tail
-	some m: Node | {
-		List.tail = m.nextNode
-		List.tail.val = v
-		nextNode' = nextNode - (m -> m.nextNode)
-		m.index' = List.tail.index
-		List.tail' = m
-		List.head' = List.head
-	}
+    some List.head
+    some m: Node | {
+	  List.head = List.tail => {
+		List.tail = m
+		List.head = m
+		m.val = v
+		no nextNode'
+		no List.head'
+		no List.tail' 
+	  }
+
+	  List.head != List.tail => {
+		some n: Node | {
+			n.nextNode = m 
+			m.val = v
+			List.tail = m
+        		nextNode' = nextNode - (n -> m)
+        		List.tail' = n
+			List.tail'.index' = n.index
+			List.head' = List.head
+		}
+	  }
+    }
+
+	List.whichStep = deleteAtTail
 }
 
+run deleteAtTail
+
 pred insert[v: one Value, i: one Int] {
-	some n: Node | { // this is the node we are inserting
-		some m: Node | { // this is the node before the one we are inserting
+	no List.head => {
+		some n: Node | {
 			n not in List.head.^nextNode
-			m.nextNode.index = i
+			List.head' = n
 			n.index' = i
-			m.index' = m.index
-			m.nextNode'.index' = i + 1
-			nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
-			
+			List.tail' = n
 		}
 	}
+	some List.tail => i <= List.tail.index or i = add[List.tail.index, 1]
+	some List.head => {
+		some n: Node | {
+			n not in List.head.^nextNode 
+			some m: Node | {
+				some m.nextNode => {
+					m.nextNode.index = i
+					m.index' = m.index
+					m.nextNode.index' = add[i, 1]
+					n.index' = i	
+					m.nextNode' = n
+					nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
+				}
+				no m.nextNode => {
+					n.index' = i
+					List.tail' = n
+					m.index' = m.index
+					nextNode' = nextNode + (m -> n) 
+				}
+			}
+		}
+	}
+	List.whichStep = insert
 }
 
 run insert
 
+
 pred delete[i: one Int] {
-	some List.head
-	some List.tail
-	some n: Node | { // i is the index of the node we want to delete (n)
-		some m: Node | { // m is the node before the node we want to delete
-			n.index = i
-			m.nextNode = n
-			n.nextNode.index' = n.index
-			m.index' = m.index
-			nextNode' = nextNode + (m -> n.nextNode) - (m -> n) - (n -> n.nextNode)
+	some List.head => i <= List.tail.index
+	no List.head => i = 0
+
+	List.head = List.tail => {
+		some n: Node | {
+			List.head = n
+			List.tail = n
+			no List.tail'
+			no List.head'
+			no nextNode'
 		}
 	}
+	
+	List.head != List.tail => {
+		some n: Node | { // i is the index of the node we want to delete (n)
+			n in List.head.^nextNode 
+			n.index = i
+			some m: Node | { // m is the node before the node we want to delete
+				m.nextNode = n
+				m.index' = m.index
+				some n.nextNode => {
+					n.nextNode.index' = n.index
+					nextNode' = nextNode + (m -> n.nextNode) - (m -> n) - (n -> n.nextNode)
+					List.tail' = List.tail 
+					List.head' = List.head
+				}
+			
+				no n.nextNode => {
+					List.tail' = m
+					nextNode' = nextNode - (m -> n)
+					List.head' = List.head
+				}
+			}	
+		}
+	}
+	List.whichStep = delete
 }
 
 run delete
@@ -154,37 +224,26 @@ run delete
 ------------------------------ Valid traces fact ------------------------------
 
 fact validTraces {
-	init
-    //	always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
-	some v: Value| insertAtHead[v] and after deleteAtHead[v]
+    init
+    always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
 }
-
-//add a donothing
 
 ------------------ Predicates to check expected outcomes ----------------------
 
 pred validList {
 	// No element can be the nextNode of multiple elements or have multiple nextNodes
-	no disj n1, n2: Node | n1.nextNode = n2.nextNode && some n1.nextNode
+	no disj n1, n2: Node | n1.nextNode = n2.nextNode --&& some n1.nextNode
 	all n: Node | lone n.nextNode
 
-    // If an element is not in the stack, it should not have a nextNode or be another element's nextNode
-    	no n: Node - List.head.^nextNode - List.head | n in n.nextNode
+    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
+    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
 	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
 
     // An element cannot be its own nextNode
     	no n: Node | n = n.nextNode
+	
 }
 
-
-
-pred deleteThenInsertSamePlace {
-	init
-	some v: Value, i: Int | {
-		delete[i]
-		after insert[v, i]
-	}
-}
 
 pred deleteThenInsertAtHead {
 	all v: Value | (deleteAtHead[v] and after insertAtHead[v]) => {
@@ -192,7 +251,6 @@ pred deleteThenInsertAtHead {
 		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
 	}
 }
-
 
 
 pred deleteThenInsertAtTail {
@@ -207,13 +265,17 @@ pred deleteThenInsertAtTail {
 	}
 }
 
+
+assert alwaysValidList { always validList }
+check alwaysValidList
+
 assert alwaysDeleteThenInsertAtHead { always deleteThenInsertAtHead }
 check alwaysDeleteThenInsertAtHead
 
 assert alwaysDeleteThenInsertAtTail { always deleteThenInsertAtTail }
 check alwaysDeleteThenInsertAtTail
 
-
-run { validList } for 10
 run { deleteThenInsertAtHead } for 10
 run { deleteThenInsertAtTail } for 10
+
+
