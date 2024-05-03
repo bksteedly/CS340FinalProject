@@ -17,9 +17,11 @@ sig Node {
 }
 
 fact {
-	all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
- 	some List.head => List.head.index = 0
-	List.head != List.tail => List.tail in List.head.^nextNode
+	always {
+		all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
+ 		some List.head => List.head.index = 0
+		List.head != List.tail => List.tail in List.head.^nextNode
+	}
 }
 
 sig Value {}
@@ -147,22 +149,21 @@ pred insert[v: one Value, i: one Int] {
 		some n: Node | {
 			n not in List.head.^nextNode
 			List.head' = n
-			n.index' = i
+			n.index' = 0
 			List.tail' = n
 			no nextNode'
 		}
 	}
-	some List.tail => i <= List.tail.index or i = add[List.tail.index, 1]
+//	some List.tail => i <= List.tail.index or i = add[List.tail.index, 1]
 	some List.head => {
-		some n: Node | {
+		some n: Node | { // n is the node we're adding
 			n not in List.head.^nextNode 
-			some m: Node | {
+			some m: Node | { // m is the node before the one we're adding
 				some m.nextNode => {
 					m.nextNode.index = i
-					m.index' = m.index
 					m.nextNode.index' = add[i, 1]
-					n.index' = i	
-					m.nextNode' = n
+					m.index' = m.index
+					n.index' = i
 					nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
 				}
 				no m.nextNode => {
@@ -176,6 +177,8 @@ pred insert[v: one Value, i: one Int] {
 	}
 	List.whichStep = insert
 }
+
+//m, m.nextNode
 
 run insert
 
@@ -277,5 +280,3 @@ check alwaysDeleteThenInsertAtTail
 
 run { deleteThenInsertAtHead } for 10
 run { deleteThenInsertAtTail } for 10
-
-
