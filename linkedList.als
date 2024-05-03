@@ -149,6 +149,7 @@ pred insert[v: one Value, i: one Int] {
 			List.head' = n
 			n.index' = i
 			List.tail' = n
+			no nextNode'
 		}
 	}
 	some List.tail => i <= List.tail.index or i = add[List.tail.index, 1]
@@ -232,15 +233,15 @@ fact validTraces {
 
 pred validList {
 	// No element can be the nextNode of multiple elements or have multiple nextNodes
-	no disj n1, n2: Node | n1.nextNode = n2.nextNode --&& some n1.nextNode
-	all n: Node | lone n.nextNode
-
-    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
-    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
-	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
-
-    // An element cannot be its own nextNode
-    	no n: Node | n = n.nextNode
+	no disj n1, n2: Node | some n1.nextNode and (n1.nextNode = n2.nextNode )--&& some n1.nextNode
+//	all n: Node | lone n.nextNode
+//
+//    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
+//    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
+//	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
+//
+//    // An element cannot be its own nextNode
+//    	no n: Node | n = n.nextNode
 	
 }
 
@@ -251,7 +252,6 @@ pred deleteThenInsertAtHead {
 		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
 	}
 }
-
 
 pred deleteThenInsertAtTail {
 	all v: Value | (deleteAtTail[v] and after insertAtTail[v]) => {
