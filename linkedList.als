@@ -20,6 +20,7 @@ fact {
 	always {
 		all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
  		some List.head => List.head.index = 0
+		some List.head => some List.tail
 		List.head != List.tail => List.tail in List.head.^nextNode
 	}
 }
@@ -237,34 +238,29 @@ fact validTraces {
 pred validList {
 	// No element can be the nextNode of multiple elements or have multiple nextNodes
 	no disj n1, n2: Node | some n1.nextNode and (n1.nextNode = n2.nextNode )--&& some n1.nextNode
-//	all n: Node | lone n.nextNode
-//
-//    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
-//    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
-//	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
-//
-//    // An element cannot be its own nextNode
-//    	no n: Node | n = n.nextNode
+	all n: Node | lone n.nextNode
+
+    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
+    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
+	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
+
+    // An element cannot be its own nextNode
+    	no n: Node | n = n.nextNode
 	
 }
 
 
-pred deleteThenInsertAtHead {
-	all v: Value | (deleteAtHead[v] and after insertAtHead[v]) => {
+pred insertThenDeleteAtHead {
+	all v: Value | (insertAtHead[v] and after deleteAtHead[v]) => {
 		List.head.val = List.head''.val
-		nextNode'' - (List.head'' -> List.head''.nextNode'') = nextNode - (List.head -> List.head.nextNode) 
+		nextNode = nextNode''
 	}
 }
 
-pred deleteThenInsertAtTail {
-	all v: Value | (deleteAtTail[v] and after insertAtTail[v]) => {
-		some m: Node {
-			List.tail = m.nextNode
-			List.tail'' = m.nextNode
-		
-			List.tail''.val = List.tail.val
-			nextNode'' - (m -> List.tail'') = nextNode - (m -> List.tail) 
-		}
+pred insertThenDeleteAtTail {
+	all v: Value | (insertAtTail[v] and after deleteAtTail[v]) => {
+		List.tail.val = List.tail''.val
+		nextNode = nextNode''
 	}
 }
 
@@ -272,11 +268,11 @@ pred deleteThenInsertAtTail {
 assert alwaysValidList { always validList }
 check alwaysValidList
 
-assert alwaysDeleteThenInsertAtHead { always deleteThenInsertAtHead }
-check alwaysDeleteThenInsertAtHead
+assert alwaysInsertThenDeleteAtHead { always insertThenDeleteAtHead }
+check alwaysInsertThenDeleteAtHead
 
-assert alwaysDeleteThenInsertAtTail { always deleteThenInsertAtTail }
-check alwaysDeleteThenInsertAtTail
+assert alwaysInsertThenDeleteAtTail { always insertThenDeleteAtTail }
+check alwaysInsertThenDeleteAtTail
 
-run { deleteThenInsertAtHead } for 10
-run { deleteThenInsertAtTail } for 10
+run { insertThenDeleteAtHead } for 10
+run { insertThenDeleteAtTail } for 10
