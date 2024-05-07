@@ -40,8 +40,6 @@ pred init {
 	no prevNode
 }
 
-run init
-
 pred insertAtHead[v: one Value] {
 	some n: Node | {
 		n not in List.head.^nextNode
@@ -62,8 +60,6 @@ pred insertAtHead[v: one Value] {
   	}
 	List.whichStep = insertAtHead
 }
-
-run insertAtHead
 
 pred insertAtTail[v: one Value] {
 	some List.tail => {
@@ -97,8 +93,6 @@ pred insertAtTail[v: one Value] {
 	List.whichStep = insertAtTail
 }
 
-run insertAtTail
-
 pred deleteAtHead[v: one Value] {
     some List.head
     some n: Node | {
@@ -123,9 +117,6 @@ pred deleteAtHead[v: one Value] {
     }
 	List.whichStep = deleteAtHead
 }
-
-run deleteAtHead
-
 
 pred deleteAtTail[v: one Value] {
     some List.head
@@ -157,9 +148,52 @@ pred deleteAtTail[v: one Value] {
 	List.whichStep = deleteAtTail
 }
 
-run deleteAtTail
+//pred insert[v: one Value, i: one Int] {
+//	some List.head => i <= add[List.tail.index, 1]
+//	no List.head => {
+//		some n: Node | {
+//			n not in List.head.^nextNode
+//			n not in List.tail.^prevNode
+//			List.head' = n
+//			n.val = v
+//			n.index' = 0
+//			List.tail' = n
+//			no nextNode'
+//			no prevNode'
+//			List.head' = List.head
+//		}
+//	}
+//	some List.head => {
+//		some n: Node | { // n is the node we're adding
+//			n not in List.head.^nextNode 
+//			n not in List.tail.^prevNode
+//			n.val = v
+//			List.head' = List.head
+//			some m: Node | { // m is the node before the one we're adding
+//				some m.nextNode => {
+//					m.nextNode.index = i
+//					m.nextNode.index' = add[i, 1]
+//					m.index' = m.index
+//					n.index' = i
+//					nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
+//					prevNode' = prevNode + (n -> m) + (m.nextNode -> n) - (m.nextNode -> m)
+//				}
+//				no m.nextNode => {
+//					n.index' = i
+//					List.tail' = n
+//					m.index' = m.index
+//					nextNode' = nextNode + (m -> n) 
+//					prevNode' = prevNode + (n -> m)
+//				}
+//			}
+//		}
+//	}
+//	List.whichStep = insert
+//}
+
 
 pred insert[v: one Value, i: one Int] {
+	some List.head => i <= add[List.tail.index, 1]
 	no List.head => {
 		some n: Node | {
 			n not in List.head.^nextNode
@@ -170,7 +204,6 @@ pred insert[v: one Value, i: one Int] {
 			List.tail' = n
 			no nextNode'
 			no prevNode'
-			List.head' = List.head
 		}
 	}
 	some List.head => {
@@ -178,13 +211,13 @@ pred insert[v: one Value, i: one Int] {
 			n not in List.head.^nextNode 
 			n not in List.tail.^prevNode
 			n.val = v
-			List.head' = List.head
 			some m: Node | { // m is the node before the one we're adding
 				some m.nextNode => {
 					m.nextNode.index = i
 					m.nextNode.index' = add[i, 1]
 					m.index' = m.index
 					n.index' = i
+					List.head' = List.head
 					nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
 					prevNode' = prevNode + (n -> m) + (m.nextNode -> n) - (m.nextNode -> m)
 				}
@@ -192,6 +225,7 @@ pred insert[v: one Value, i: one Int] {
 					n.index' = i
 					List.tail' = n
 					m.index' = m.index
+					List.head' = List.head
 					nextNode' = nextNode + (m -> n) 
 					prevNode' = prevNode + (n -> m)
 				}
@@ -200,10 +234,6 @@ pred insert[v: one Value, i: one Int] {
 	}
 	List.whichStep = insert
 }
-
-
-run insert
-
 
 
 pred delete[i: one Int] {
@@ -249,15 +279,12 @@ pred delete[i: one Int] {
 	List.whichStep = delete
 }
 
-run delete
-
-
 ------------------------------ Valid traces fact ------------------------------
 
-//fact validTraces {
-//    init
-//    always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
-//}
+fact validTraces {
+    init
+    always (some v: Value, i: Int | insertAtHead[v] or insertAtTail[v] or deleteAtHead[v] or deleteAtTail[v] or delete[i] or insert[v, i])
+}
 
 ------------------ Predicates to check expected outcomes ----------------------
 
@@ -308,6 +335,14 @@ check alwaysInsertThenDeleteAtHead
 
 assert alwaysInsertThenDeleteAtTail { always insertThenDeleteAtTail }
 check alwaysInsertThenDeleteAtTail
+
+run init
+run insertAtHead
+run insertAtTail
+run deleteAtHead
+run deleteAtTail
+run insert
+run delete
 
 run { insertThenDeleteAtHead } for 10
 run { insertThenDeleteAtTail } for 10
