@@ -1,4 +1,4 @@
-# CS340FinalProject
+# Linked List Modeling and Property-Based Testing
 
 This project extends our modeling skills developed in CS340: Modeling for Computer Systems by modeling a singly linked list and using our Python property-based testing skills to test properties of a singly and doubly linked list implementation. 
 
