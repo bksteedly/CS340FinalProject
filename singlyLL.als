@@ -35,7 +35,7 @@ pred init {
 	no tail
 }
 
---run init
+run init
 
 pred insertAtHead[v: one Value] {
 	some n: Node | {
@@ -56,7 +56,7 @@ pred insertAtHead[v: one Value] {
 	List.whichStep = insertAtHead
 }
 
---run insertAtHead
+run insertAtHead
 
 pred insertAtTail[v: one Value] {
 	some List.tail => {
@@ -87,7 +87,7 @@ pred insertAtTail[v: one Value] {
 	List.whichStep = insertAtTail
 }
 
---run insertAtTail
+run insertAtTail
 
 pred deleteAtHead[v: one Value] {
     some List.head
@@ -113,7 +113,7 @@ pred deleteAtHead[v: one Value] {
 	List.whichStep = deleteAtHead
 }
 
---run deleteAtHead
+run deleteAtHead
 
 
 pred deleteAtTail[v: one Value] {
@@ -144,9 +144,10 @@ pred deleteAtTail[v: one Value] {
 	List.whichStep = deleteAtTail
 }
 
---run deleteAtTail
+run deleteAtTail
 
 pred insert[v: one Value, i: one Int] {
+	some List.head => i <= add[List.tail.index, 1]
 	no List.head => {
 		some n: Node | {
 			n not in List.head.^nextNode
@@ -183,7 +184,7 @@ pred insert[v: one Value, i: one Int] {
 	List.whichStep = insert
 }
 
---run insert
+run insert
 
 
 pred delete[i: one Int] {
@@ -225,7 +226,7 @@ pred delete[i: one Int] {
 	List.whichStep = delete
 }
 
---run delete
+run delete
 
 
 ------------------------------ Valid traces fact ------------------------------
