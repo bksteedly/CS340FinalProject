@@ -6,7 +6,7 @@ class Node:
         self.next = None
 
  
-class BrokenLinkedList:
+class LinkedList:
     def __init__(self):
         self.head = None
 
@@ -21,13 +21,13 @@ class BrokenLinkedList:
     
     def insertAtTail(self, data):
         newNode = Node(data)
-        # if self.head is None: 
-        #     self.head = newNode
-        #     return
-        # else:
-        previousTail = self.head
-        while(previousTail.next):
-            previousTail = previousTail.next
+        if self.head is None: 
+            self.head = newNode
+            return
+        else:
+            previousTail = self.head
+            while(previousTail.next):
+                previousTail = previousTail.next
  
         previousTail.next = newNode
 
@@ -39,12 +39,11 @@ class BrokenLinkedList:
             self.insertAtHead(data)
             return
         else:
-            #currentNode != None and 
-            while(currentIndex+1 != index):
+            while(currentNode != None and currentIndex+1 != index):
                 currentNode = currentNode.next
                 currentIndex += 1
  
-            if currentNode != None:
+            if currentNode != None: 
                 newNode.next = currentNode.next
                 currentNode.next = newNode
             else:
@@ -99,26 +98,30 @@ class BrokenLinkedList:
 # PBT 
 @given(st.lists(st.integers()))
 def test_insertAtHead(values):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
     
     for value in values:
-        linkedList.insertAtHead(value)
-
-    assert linkedList.convertToList() == list(reversed(values))
+        linkedList.insertAtHead(value) 
+        
+    # if we insert at the head, then the linked list will be in the opposite order as the values list
+    assert linkedList.convertToList() == list(reversed(values)) 
 
 @given(st.lists(st.integers()))
 def test_insertAtTail(values):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
 
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
 
+    # if we insert at the tail, then the linked list will be in the same order as the values list
     assert linkedList.convertToList() == values
 
 @given(st.lists(st.integers()), st.integers(), st.integers(min_value=0))
 def test_insertAtIndex(values, data, index):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
     
     index = min(index, len(values))  # Ensure index is within range
@@ -126,38 +129,45 @@ def test_insertAtIndex(values, data, index):
 
     firstHalf = linkedList.convertToList()[:index]
     secondHalf = linkedList.convertToList()[index+1:]
-    
+
+    # check that all other node values before and after the newly inserted node remain the same
     assert firstHalf + secondHalf == values
 
 @given(st.lists(st.integers()), st.integers(min_value=1))
 def test_deleteAtHead(values, n):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
 
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
 
     numOfDeletes = min(n, len(values)) # don't delete more times than the length of the list
     for _ in range(numOfDeletes): 
         linkedList.deleteAtHead()
+    
+    # all other node values after the deleted nodes should remain the same
     assert linkedList.convertToList() == values[numOfDeletes:]
 
 @given(st.lists(st.integers()), st.integers(min_value=1))
 def test_deleteAtTail(values, n):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
 
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
 
     numOfDeletes = min(n, len(values)) # don't delete more times than the length of the list
     for _ in range(numOfDeletes): 
         linkedList.deleteAtTail()
 
+    # all other node values before the deleted nodes should remain the same
     assert linkedList.convertToList() == values[:len(values) - numOfDeletes]
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_deleteAtIndex(values, index):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
     
     index = min(index, len(values) - 1)  # Ensure index is within range
@@ -165,13 +175,16 @@ def test_deleteAtIndex(values, index):
     
     firstHalf = values[:index]
     secondHalf = values[index+1:]
+
+    # all nodes before and after the deleted node should be preserved 
     assert linkedList.convertToList() == firstHalf + secondHalf
 
 @given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
 def test_deleteThenInsert(values, data, index):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
 
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
 
     index = min(index, len(values) - 1) # Ensure index is within range
@@ -180,13 +193,17 @@ def test_deleteThenInsert(values, data, index):
     linkedList.insertAtIndex(data, index)
 
     assert len(linkedList.convertToList()) == len(values)  
+
+    # nodes before and after the newly inserted node should have the same values and be
+    # separated by the new node's data value
     assert linkedList.convertToList() == values[:index] + [data] + values[index+1:] 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
 def test_insertThenDelete(values, data, index):
-    linkedList = BrokenLinkedList()
+    linkedList = LinkedList()
 
     for value in values:
+        # inserting at tail => order of values is same in LL as the values list
         linkedList.insertAtTail(value)
 
     index = min(index, len(values) - 1) # Ensure index is within range
@@ -194,6 +211,7 @@ def test_insertThenDelete(values, data, index):
     linkedList.insertAtIndex(data, index)
     linkedList.deleteAtIndex(index)
 
+    # the linked list should remain unchanged 
     assert linkedList.convertToList() == values
 
 def main():

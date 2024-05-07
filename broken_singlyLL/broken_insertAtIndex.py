@@ -6,7 +6,7 @@ class Node:
         self.next = None
 
  
-class LinkedList:
+class BrokenLL:
     def __init__(self):
         self.head = None
 
@@ -31,6 +31,11 @@ class LinkedList:
  
         previousTail.next = newNode
 
+    """
+    Broken implementation: In the while loop condition, it checks that the currentIndex does not
+    equal the index at which to insert, but it instead should check that currentIndex + 1
+    does not equal the index at which to insert.
+    """
     def insertAtIndex(self, data, index):
         newNode = Node(data)
         currentNode = self.head
@@ -39,7 +44,7 @@ class LinkedList:
             self.insertAtHead(data)
             return
         else:
-            while(currentNode != None and currentIndex+1 != index):
+            while(currentNode != None and currentIndex != index):
                 currentNode = currentNode.next
                 currentIndex += 1
  
@@ -96,27 +101,9 @@ class LinkedList:
         return result
 
 # PBT 
-@given(st.lists(st.integers()))
-def test_insertAtHead(values):
-    linkedList = LinkedList()
-    
-    for value in values:
-        linkedList.insertAtHead(value)
-
-    assert linkedList.convertToList() == list(reversed(values))
-
-@given(st.lists(st.integers()))
-def test_insertAtTail(values):
-    linkedList = LinkedList()
-
-    for value in values:
-        linkedList.insertAtTail(value)
-
-    assert linkedList.convertToList() == values
-
 @given(st.lists(st.integers()), st.integers(), st.integers(min_value=0))
 def test_insertAtIndex(values, data, index):
-    linkedList = LinkedList()
+    linkedList = BrokenLL()
     for value in values:
         linkedList.insertAtTail(value)
     
@@ -128,83 +115,8 @@ def test_insertAtIndex(values, data, index):
     
     assert firstHalf + secondHalf == values
 
-@given(st.lists(st.integers()), st.integers(min_value=1))
-def test_deleteAtHead(values, n):
-    linkedList = LinkedList()
-
-    for value in values:
-        linkedList.insertAtTail(value)
-
-    numOfDeletes = min(n, len(values)) # don't delete more times than the length of the list
-    for _ in range(numOfDeletes): 
-        linkedList.deleteAtHead()
-    assert linkedList.convertToList() == values[numOfDeletes:]
-
-@given(st.lists(st.integers()), st.integers(min_value=1))
-def test_deleteAtTail(values, n):
-    linkedList = LinkedList()
-
-    for value in values:
-        linkedList.insertAtTail(value)
-
-    numOfDeletes = min(n, len(values)) # don't delete more times than the length of the list
-    for _ in range(numOfDeletes): 
-        linkedList.deleteAtTail()
-
-    assert linkedList.convertToList() == values[:len(values) - numOfDeletes]
-
-@given(st.lists(st.integers()), st.integers(min_value=0))
-def test_deleteAtIndex(values, index):
-    linkedList = LinkedList()
-    for value in values:
-        linkedList.insertAtTail(value)
-    
-    index = min(index, len(values) - 1)  # Ensure index is within range
-    linkedList.deleteAtIndex(index)
-    
-    firstHalf = values[:index]
-    secondHalf = values[index+1:]
-    assert linkedList.convertToList() == firstHalf + secondHalf
-
-@given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
-def test_deleteThenInsert(values, data, index):
-    linkedList = LinkedList()
-
-    for value in values:
-        linkedList.insertAtTail(value)
-
-    index = min(index, len(values) - 1) # Ensure index is within range
-
-    linkedList.deleteAtIndex(index)
-    linkedList.insertAtIndex(data, index)
-
-    assert len(linkedList.convertToList()) == len(values)  
-    assert linkedList.convertToList() == values[:index] + [data] + values[index+1:] 
-
-@given(st.lists(st.integers(), min_size=1), st.integers(), st.integers(min_value=0))
-def test_insertThenDelete(values, data, index):
-    linkedList = LinkedList()
-
-    for value in values:
-        linkedList.insertAtTail(value)
-
-    index = min(index, len(values) - 1) # Ensure index is within range
-
-    linkedList.insertAtIndex(data, index)
-    linkedList.deleteAtIndex(index)
-
-    assert linkedList.convertToList() == values
-
 def main():
-    test_insertAtHead()
-    test_insertAtTail()
     test_insertAtIndex()
-    test_deleteAtHead()
-    test_deleteAtTail()
-    test_deleteAtIndex()
-    test_deleteThenInsert()
-    test_insertThenDelete()
-    print("ALL TESTS PASSED!")
 
 if __name__ == "__main__":
     main()
