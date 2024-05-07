@@ -20,8 +20,8 @@ fact {
 	always {
 		all n, m: Node | (n -> m in nextNode) => m.index = add[n.index, 1]
  		some List.head => List.head.index = 0
-		some List.head => some List.tail
 		List.head != List.tail => List.tail in List.head.^nextNode
+		some List.head => some List.tail
 	}
 }
 
@@ -76,7 +76,8 @@ pred insertAtTail[v: one Value] {
 		some n: Node | {
 			n not in List.head.^nextNode
 			n.val = v
-			nextNode' = nextNode
+			//nextNode' = nextNode
+			no nextNode'
 			n.index' = 0
 			List.head' = n
 			List.tail' = n
@@ -150,15 +151,16 @@ pred insert[v: one Value, i: one Int] {
 		some n: Node | {
 			n not in List.head.^nextNode
 			List.head' = n
+			n.val = v
 			n.index' = 0
 			List.tail' = n
 			no nextNode'
 		}
 	}
-//	some List.tail => i <= List.tail.index or i = add[List.tail.index, 1]
 	some List.head => {
 		some n: Node | { // n is the node we're adding
 			n not in List.head.^nextNode 
+			n.val = v
 			some m: Node | { // m is the node before the one we're adding
 				some m.nextNode => {
 					m.nextNode.index = i
@@ -179,7 +181,6 @@ pred insert[v: one Value, i: one Int] {
 	List.whichStep = insert
 }
 
-//m, m.nextNode
 
 run insert
 
@@ -240,15 +241,14 @@ pred validList {
 	no disj n1, n2: Node | some n1.nextNode and (n1.nextNode = n2.nextNode )--&& some n1.nextNode
 	all n: Node | lone n.nextNode
 
-    // If an element is not in the list, it should not have a nextNode or be another element's nextNode
-    	no n: Node - List.head.^nextNode - List.head | some n.nextNode
-	no n: Node - List.head.^nextNode - List.head, m: Node | m.nextNode = n
+      // If an element is not in the list, it should not have a nextNode or be another element's nextNode
+    	no n: Node - List.head.^nextNode - List.head | n in n.nextNode
+	no n: Node - List.head.^nextNode - List.head | n in List.head.^nextNode
 
-    // An element cannot be its own nextNode
+      // An element cannot be its own nextNode
     	no n: Node | n = n.nextNode
 	
 }
-
 
 pred insertThenDeleteAtHead {
 	all v: Value | (insertAtHead[v] and after deleteAtHead[v]) => {
