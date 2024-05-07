@@ -15,7 +15,7 @@ We modeled a stack for a previous assignment, so modeling a singly and doubly li
 
 To conduct property-based testing on our linked list implementation, we used the Python hypothesis library to generate random valid inputs and test the output of different linked list operations against properties we define for a linked list. 
 
-For our property-based testing, we first implemented a singly linked list and doubly linked list implementation which have functions for inserting and deleting at the head and tail along with inserting and deleting at any index. We tested that properties of the linked list are maintained when each operation is performed. 
+For our property-based testing, we first implemented a singly linked list and doubly linked list implementation which have functions for inserting and deleting at the head and tail along with inserting and deleting at any index. We tested that properties of the linked list are maintained when each operation is performed. Additionally, we created a folder of broken singly linked list implementations where each file in the folder has one of the several operations be broken, in order to check that our PBT correctly identifies incorrect implementations.
 
 ## Required Tools
 
