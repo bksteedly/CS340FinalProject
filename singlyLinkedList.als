@@ -106,7 +106,7 @@ pred deleteAtHead[v: one Value] {
         List.head != List.tail => {
 		List.head' = n.nextNode
             List.tail' = List.tail
-		List.tail'.index' = List.tail.index
+		List.tail'.index' = minus[List.tail.index, 1]
             nextNode' = nextNode - (n -> n.nextNode)
         }
     }
@@ -167,12 +167,14 @@ pred insert[v: one Value, i: one Int] {
 					m.nextNode.index' = add[i, 1]
 					m.index' = m.index
 					n.index' = i
+					List.head' = List.head
 					nextNode' = nextNode + (m -> n) + (n -> m.nextNode) - (m -> m.nextNode)
 				}
 				no m.nextNode => {
 					n.index' = i
 					List.tail' = n
 					m.index' = m.index
+					List.head' = List.head
 					nextNode' = nextNode + (m -> n) 
 				}
 			}
@@ -180,7 +182,6 @@ pred insert[v: one Value, i: one Int] {
 	}
 	List.whichStep = insert
 }
-
 
 run insert
 
@@ -264,6 +265,14 @@ pred insertThenDeleteAtTail {
 	}
 }
 
+pred insertThenDeleteAtIndex {
+	all v: Value, i: Int | (insert[v, i] and after delete[i]) => {
+		List.tail.val = List.tail''.val
+		List.head.val = List.head''.val
+		nextNode = nextNode''
+	}
+}
+
 
 assert alwaysValidList { always validList }
 check alwaysValidList
@@ -274,5 +283,5 @@ check alwaysInsertThenDeleteAtHead
 assert alwaysInsertThenDeleteAtTail { always insertThenDeleteAtTail }
 check alwaysInsertThenDeleteAtTail
 
-run { insertThenDeleteAtHead } for 10
-run { insertThenDeleteAtTail } for 10
+assert alwaysInsertThenDeleteAtIndex{ always insertThenDeleteAtIndex }
+check alwaysInsertThenDeleteAtIndex
