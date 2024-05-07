@@ -1,14 +1,17 @@
 # Linked List Modeling and Property-Based Testing
 
-This project extends our modeling skills developed in CS340: Modeling for Computer Systems by modeling a singly linked list and using our Python property-based testing skills to test properties of a singly and doubly linked list implementation. 
+This project extends our modeling skills developed in CS340: Modeling for Computer Systems by modeling a singly and doubly linked list in Alloy and using our Python property-based testing skills to test properties of a singly and doubly linked list implementation. 
 
 ## Project Overview
 
-We modeled a stack for a previous assignment, so modeling a linked list and adding additional functionality like being able to insert at any point in the list seemed like a natural extension of this. We use temporal alloy to show the different states of the list as nodes are added or removed. In Alloy, we modeled inserting and deleting nodes at the head and tail in addition to modeling insert and delete at any index. We checked that the properties of the list are maintained while performing different operations, including:
+We modeled a stack for a previous assignment, so modeling a singly and doubly linked list and adding additional functionality like being able to insert at any point in the list seemed like a natural extension of this. We use temporal alloy to show the different states of the list as nodes are added or removed. In Alloy, we modeled inserting and deleting nodes at the head and tail in addition to modeling insert and delete at any index. We checked that the properties of the list are maintained while performing different operations, including:
 
-- No node can be the nextNode of multiple nodes or have multiple next nodes.
+- No node can be the nextNode of multiple nodes or have multiple nextNode relations.
 - If an element is not in the linked list, it should not have a nextNode or be the nextNode of another node.
 - No node can be its own nextNode.
+- No node can be the prevNode of multiple nodes or have multiple prevNode relations.
+- If an element is not in the linked list, it should not have a prevNode or be the prevNode of another node.
+- No node can be its own prevNode.
 
 To conduct property-based testing on our linked list implementation, we used the Python hypothesis library to generate random valid inputs and test the output of different linked list operations against properties we define for a linked list. 
 
